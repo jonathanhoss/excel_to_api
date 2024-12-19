@@ -15,10 +15,9 @@ def register_routes(app):
         # Fetch all Excel files and calculations from the database
         excel_files = ExcelFile.query.all()
         calculations = Calculation.query.all()
-
-
-        return render_template("home.html", excel_files=excel_files, calculations=calculations)
-
+        return render_template(
+            "home.html", excel_files=excel_files, calculations=calculations
+        )
 
     @app.route("/upload", methods=["POST"])
     def upload():
@@ -39,11 +38,6 @@ def register_routes(app):
         if file_repo.delete(file_id):
             return redirect(url_for("home"))
         return jsonify({"error": "File not found"}), 404
-
-    # TODO: #delete
-    # @app.route("/list-files", methods=["GET"])
-    # def list_files():
-    #     return jsonify(str(file_repo.list_files()))
 
     @app.route("/calculate/<filename>", methods=["GET"])
     def calculate_excel(filename):
@@ -80,7 +74,7 @@ def register_routes(app):
                 ),
                 500,
             )
-        
+
     @app.route("/calculation/new", methods=["GET", "POST"])
     def new_calculation():
         if request.method == "GET":
@@ -98,11 +92,6 @@ def register_routes(app):
                 inputs = [cell.strip().upper() for cell in inputs.split(",")]
                 outputs = [cell.strip().upper() for cell in outputs.split(",")]
 
-                # # Extract fields
-                # excel_file_id = data.get("excel_file_id")
-                # inputs = data.get("inputs")
-                # outputs = data.get("outputs")
-
                 if not excel_file_id:
                     return jsonify({"error": "Excel file ID is required"}), 400
 
@@ -112,9 +101,14 @@ def register_routes(app):
                     return jsonify({"error": "Valid inputs are required"}), 400
 
                 # Verify that the referenced Excel file exists
-                excel_file = ExcelFile.query.get(excel_file_id) # TODO: Put in repo
+                excel_file = ExcelFile.query.get(excel_file_id)  # TODO: Put in repo
                 if not excel_file:
-                    return jsonify({"error": f"Excel file with ID {excel_file_id} not found"}), 404
+                    return (
+                        jsonify(
+                            {"error": f"Excel file with ID {excel_file_id} not found"}
+                        ),
+                        404,
+                    )
 
                 # Create a new Calculation instance
                 new_calculation = Calculation(
@@ -129,14 +123,16 @@ def register_routes(app):
                 db.session.commit()
 
                 return redirect(url_for("home"))
-                # return jsonify({
-                #     "msg": "Calculation created successfully",
-                #     "calculation_id": new_calculation.id
-                # }), 201
 
             except Exception as e:
-                return jsonify({"error": f"An error occurred while creating the calculation: {str(e)}"}), 500
-
+                return (
+                    jsonify(
+                        {
+                            "error": f"An error occurred while creating the calculation: {str(e)}"
+                        }
+                    ),
+                    500,
+                )
 
     @app.route("/calculation/run/<int:calculation_id>", methods=["GET"])
     def get_calculation_form(calculation_id):
@@ -148,9 +144,9 @@ def register_routes(app):
         # Extract the required inputs for the calculation
         required_inputs = db_calculation.inputs_list  # e.g., ["DATA!B1", "DATA!B2"]
 
-        return render_template("calculation_form.html", calculation=db_calculation, inputs=required_inputs)
-
-
+        return render_template(
+            "calculation_form.html", calculation=db_calculation, inputs=required_inputs
+        )
 
     @app.route("/calculation/run/<int:calculation_id>", methods=["POST"])
     def calculate_calculation(calculation_id):
@@ -167,15 +163,18 @@ def register_routes(app):
             required_inputs = db_calculation.inputs_list  # e.g., ["DATA!B1", "DATA!B2"]
             print("INPUT", user_inputs)
             if not all(input in user_inputs for input in required_inputs):
-                return jsonify({"error": f"Missing required inputs: {required_inputs}"}), 400
-
-            # Get the user-provided inputs
-            # user_inputs = data["inputs"]
+                return (
+                    jsonify({"error": f"Missing required inputs: {required_inputs}"}),
+                    400,
+                )
 
             # Validate that the user provided all required inputs
             required_inputs = db_calculation.inputs_list  # e.g., ["DATA!B1", "DATA!B2"]
             if not all(key in user_inputs for key in required_inputs):
-                return jsonify({"error": f"Missing required inputs: {required_inputs}"}), 400
+                return (
+                    jsonify({"error": f"Missing required inputs: {required_inputs}"}),
+                    400,
+                )
 
             # Prepare inputs as a dictionary for the calculation logic
             inputs_dict = {key: user_inputs[key] for key in required_inputs}
@@ -186,28 +185,35 @@ def register_routes(app):
 
             # Run the calculation
             outputs = db_calculation.outputs_list  # e.g., ["DATA!B3"]
-            inputs_dict = {f"'[{excel_file.filename}]{key.split("!")[0]}'!{key.split("!")[1]}": inputs_dict[key] for key in inputs_dict} # TODO: Refactor
+            inputs_dict = {
+                f"'[{excel_file.filename}]{key.split("!")[0]}'!{key.split("!")[1]}": inputs_dict[
+                    key
+                ]
+                for key in inputs_dict
+            }  # TODO: Refactor
 
             print(f"Calculating inputs: {inputs_dict}")
 
             solution = excel_service.model_calculate(xl_model, inputs=inputs_dict)
-            results = {key: excel_service.get_cell_from_solution(solution, excel_file.filename, key.split("!")[0], key.split("!")[1]) for key in outputs} # TODO: Refactor
+            results = {
+                key: excel_service.get_cell_from_solution(
+                    solution, excel_file.filename, key.split("!")[0], key.split("!")[1]
+                )
+                for key in outputs
+            }  # TODO: Refactor
 
             print(results)
 
             # Render the result in an HTML template
-            return render_template(
-                "calculation_result.html",
-                calculation=db_calculation,
-                inputs=user_inputs,
-                results=results
-            ), 200
-
-            # # Return the results to the user
-            # return jsonify({
-            #     "msg": f"Calculation {calculation_id} executed successfully",
-            #     "results": results
-            # }), 200
+            return (
+                render_template(
+                    "calculation_result.html",
+                    calculation=db_calculation,
+                    inputs=user_inputs,
+                    results=results,
+                ),
+                200,
+            )
 
         except Exception as e:
             return jsonify({"error": f"An error occurred: {str(e)}"}), 500
