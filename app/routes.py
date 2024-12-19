@@ -1,11 +1,10 @@
 from flask import render_template, request, redirect, url_for, jsonify
-from app import db
 from app.services.calculation_service import ExcelCalculationService
-from app.repositories.file_repository import ExcelFileRepository
-from app.models import Calculation, ExcelFile
+from app.repositories.repositories import ExcelFileRepository, CalculationRepository
 
 # Initialize the file repository (set your upload folder path)
 file_repo = ExcelFileRepository(upload_folder="uploads")
+calc_repo = CalculationRepository()
 excel_service = ExcelCalculationService()
 
 
@@ -13,8 +12,8 @@ def register_routes(app):
     @app.route("/")
     def home():
         # Fetch all Excel files and calculations from the database
-        excel_files = ExcelFile.query.all()
-        calculations = Calculation.query.all()
+        excel_files = file_repo.get_all()
+        calculations = calc_repo.get_all()
         return render_template(
             "home.html", excel_files=excel_files, calculations=calculations
         )
@@ -79,7 +78,7 @@ def register_routes(app):
     def new_calculation():
         if request.method == "GET":
             # Fetch all available Excel files for the dropdown
-            excel_files = ExcelFile.query.all()
+            excel_files = file_repo.get_all()
             return render_template("new_calculation.html", excel_files=excel_files)
 
         if request.method == "POST":
@@ -88,7 +87,6 @@ def register_routes(app):
                 calculation_name = request.form.get("calculation_name")
                 inputs = request.form.get("inputs")  # Retrieve inputs as a list
                 outputs = request.form.get("outputs")  # Retrieve outputs as a list
-
 
                 # Split the inputs and outputs into lists
                 inputs = [cell.strip().upper() for cell in inputs.split(",")]
@@ -103,7 +101,8 @@ def register_routes(app):
                     return jsonify({"error": "Valid inputs are required"}), 400
 
                 # Verify that the referenced Excel file exists
-                excel_file = ExcelFile.query.get(excel_file_id)  # TODO: Put in repo
+                excel_file = file_repo.get(excel_file_id)
+
                 if not excel_file:
                     return (
                         jsonify(
@@ -113,17 +112,12 @@ def register_routes(app):
                     )
 
                 # Create a new Calculation instance
-                new_calculation = Calculation(
+                new_calculation = calc_repo.create_calculation(
                     excel_file_id=excel_file_id,
-                    name=calculation_name,
+                    calculation_name=calculation_name,
+                    inputs=inputs,
+                    outputs=outputs,
                 )
-
-                new_calculation.inputs_list = inputs
-                new_calculation.outputs_list = outputs
-
-                # Save the calculation to the database
-                db.session.add(new_calculation)
-                db.session.commit()
 
                 return redirect(url_for("home"))
 
@@ -140,7 +134,8 @@ def register_routes(app):
     @app.route("/calculation/run/<int:calculation_id>", methods=["GET"])
     def get_calculation_form(calculation_id):
         # Fetch the calculation from the database
-        db_calculation = Calculation.query.get(calculation_id)
+        db_calculation = calc_repo.get_calculation_by_id(calculation_id)
+
         if not db_calculation:
             return jsonify({"error": "Calculation not found"}), 404
 
@@ -155,7 +150,7 @@ def register_routes(app):
     def calculate_calculation(calculation_id):
         try:
             # Fetch the calculation from the database
-            db_calculation = Calculation.query.get(calculation_id)
+            db_calculation = calc_repo.get_calculation_by_id(calculation_id)
             if not db_calculation:
                 return jsonify({"error": "Calculation not found"}), 404
 
@@ -220,3 +215,7 @@ def register_routes(app):
 
         except Exception as e:
             return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return redirect(url_for("home"))

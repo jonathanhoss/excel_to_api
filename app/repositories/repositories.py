@@ -1,4 +1,4 @@
-from app.models import ExcelFile
+from app.models import ExcelFile, Calculation
 from werkzeug.utils import secure_filename
 import os
 from app import db
@@ -8,6 +8,9 @@ class ExcelFileRepository:
     def __init__(self, upload_folder: str):
         self.upload_folder = upload_folder
         os.makedirs(self.upload_folder, exist_ok=True)  # Ensure the folder exists
+
+    def get_all(self):
+        return ExcelFile.query.all()
 
     def save(self, file):
         filename = secure_filename(file.filename)
@@ -54,3 +57,47 @@ class ExcelFileRepository:
     def get_file_by_name(self, filename):
         # Retrieve the file metadata by filename from the database
         return ExcelFile.query.filter_by(filename=filename).first()
+
+
+class CalculationRepository:
+    def get_all(self):
+        return Calculation.query.all()
+
+    def get_calculation_by_id(self, calc_id):
+        return Calculation.query.get(calc_id)
+
+    def create_calculation(
+        self, excel_file_id, calculation_name: str, inputs: list, outputs: list
+    ):
+        # Create a new Calculation instance
+        new_calculation = Calculation(
+            excel_file_id=excel_file_id,
+            name=calculation_name,
+        )
+
+        # Set the inputs and outputs lists
+        new_calculation.inputs_list = inputs
+        new_calculation.outputs_list = outputs
+
+        # Save the calculation to the database
+        db.session.add(new_calculation)
+        db.session.commit()
+
+        return new_calculation
+
+    def update_calculation(self, calc_id, status, outputs):
+        calc = self.get_calculation_by_id(calc_id)
+        if calc:
+            calc.status = status
+            calc.outputs = outputs
+            db.session.commit()
+            return calc
+        return None
+
+    def delete_calculation(self, calc_id):
+        calc = self.get_calculation_by_id(calc_id)
+        if calc:
+            db.session.delete(calc)
+            db.session.commit()
+            return True
+        return False
