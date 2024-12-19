@@ -27,7 +27,7 @@
           <tr>
             <td>{{ file.id }}</td>
             <td>{{ file.filename }}</td>
-            <td>{{ file.uploaded_at }}</td>
+            <td>{{ file.uploaded_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
             <td>
               <!-- Delete Button -->
               <form
@@ -58,10 +58,11 @@
         <thead>
           <tr>
             <th>#</th>
+            <th>Calculation Name</th> <!-- Add column for the name -->
             <th>Excel File</th>
-            <th>Inputs</th>
+            <!-- <th>Inputs</th>
             <th>Outputs</th>
-            <th>Status</th>
+            <th>Status</th> -->
             <th>Created At</th>
             <th>Actions</th> <!-- Added Actions column for the button -->
           </tr>
@@ -70,11 +71,12 @@
           {% for calc in calculations %}
           <tr>
             <td>{{ calc.id }}</td>
+            <td>{{ calc.name }}</td> <!-- Display the name of the calculation -->
             <td>{{ calc.excel_file.filename }}</td>
-            <td>{{ calc.inputs_list }}</td>
+            <!-- <td>{{ calc.inputs_list }}</td>
             <td>{{ calc.outputs_list }}</td>
-            <td>{{ calc.status }}</td>
-            <td>{{ calc.created_at }}</td>
+            <td>{{ calc.status }}</td> -->
+            <td>{{ calc.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
             <td>
               <!-- Add a button that links to the form for the calculation -->
               <a href="{{ url_for('get_calculation_form', calculation_id=calc.id) }}" class="btn btn-primary">Run Calculation</a>

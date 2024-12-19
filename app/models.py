@@ -10,6 +10,7 @@ class Calculation(db.Model):
     excel_file_id = db.Column(
         db.Integer, db.ForeignKey("excel_file.id"), nullable=False
     )
+    name = db.Column(db.String(256), nullable=False)  # Add the name column
     inputs = db.Column(db.Text, nullable=True)  # Store as JSON strings
     outputs = db.Column(db.Text, nullable=True)  # Store as JSON strings
     status = db.Column(

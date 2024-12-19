@@ -6,6 +6,11 @@
         <h1 class="mb-4">Create New Calculation</h1>
         <form action="{{ url_for('new_calculation') }}" method="POST">
             <div class="mb-3">
+                <label for="calculation_name" class="form-label">Calculation Name</label>
+                <input type="text" class="form-control" id="calculation_name" name="calculation_name" required>
+            </div>
+
+            <div class="mb-3">
                 <label for="excel_file_id" class="form-label">Excel File</label>
                 <select class="form-select" id="excel_file_id" name="excel_file_id" required>
                     <option value="">-- Select Excel File --</option>

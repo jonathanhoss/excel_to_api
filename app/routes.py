@@ -85,8 +85,10 @@ def register_routes(app):
         if request.method == "POST":
             try:
                 excel_file_id = request.form.get("excel_file_id")
+                calculation_name = request.form.get("calculation_name")
                 inputs = request.form.get("inputs")  # Retrieve inputs as a list
                 outputs = request.form.get("outputs")  # Retrieve outputs as a list
+
 
                 # Split the inputs and outputs into lists
                 inputs = [cell.strip().upper() for cell in inputs.split(",")]
@@ -113,6 +115,7 @@ def register_routes(app):
                 # Create a new Calculation instance
                 new_calculation = Calculation(
                     excel_file_id=excel_file_id,
+                    name=calculation_name,
                 )
 
                 new_calculation.inputs_list = inputs
