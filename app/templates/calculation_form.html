@@ -1,21 +1,31 @@
 {% extends "base.html" %}
 
-{% block title %}Calculation Results{% endblock %}
+{% block title %}Run Calculation: {{ calculation.name }}{% endblock %}
 
 {% block content %}
 
-<h1>Run Calculation: {{ calculation.name }}</h1>
+<!-- Main container for the calculation form -->
+<div class="container mt-4">
+  <h1 class="mb-4">Run Calculation: <strong>{{ calculation.name }}</strong></h1>
 
-<form action="{{ url_for('calculate_calculation', calculation_id=calculation.id) }}" method="POST">
-    <h3>Inputs</h3>
-    {% for input in inputs %}
-        <div class="form-group">
-            <label for="{{ input }}">{{ input }}</label>
-            <input type="text" class="form-control" id="{{ input }}" name="{{ input }}" placeholder="Enter value for {{ input }}" required>
+  <!-- Calculation Inputs Form -->
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title mb-4">Inputs</h3>
+      
+      <form action="{{ url_for('calculate_calculation', calculation_id=calculation.id) }}" method="POST">
+        {% for input in inputs %}
+        <div class="form-group mb-3">
+          <label for="{{ input }}" class="form-label">{{ input }}</label>
+          <input type="text" class="form-control" id="{{ input }}" name="{{ input }}" placeholder="Enter value for {{ input }}" required>
         </div>
-    {% endfor %}
+        {% endfor %}
 
-    <button type="submit" class="btn btn-primary">Run Calculation</button>
-</form>
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary btn-lg">Run Calculation</button>
+      </form>
+    </div>
+  </div>
+</div>
 
 {% endblock %}

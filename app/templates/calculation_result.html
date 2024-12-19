@@ -3,47 +3,66 @@
 {% block title %}Calculation Results{% endblock %}
 
 {% block content %}
-    <h1>Calculation Results for Calculation #{{ calculation.id }}</h1>
+<!-- Main container for displaying results -->
+<div class="container mt-4">
 
-    <h3>Excel File: {{ calculation.excel_file.filename }}</h3>
-    <h5>Status: {{ calculation.status }}</h5>
+  <!-- Heading for calculation results -->
+  <h1 class="mb-4">Calculation Results for Calculation #{{ calculation.id }}</h1>
 
-    <h3>Input Values</h3>
-    <table class="table table-bordered">
+  <!-- Excel File Info -->
+  <div class="mb-4">
+    <h3><strong>Excel File:</strong> {{ calculation.excel_file.filename }}</h3>
+    <h5><strong>Status:</strong> {{ calculation.status }}</h5>
+  </div>
+
+  <!-- Input Values Section -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h3 class="card-title mb-3">Input Values</h3>
+      <table class="table table-bordered table-striped">
         <thead>
-            <tr>
-                <th>Input Reference</th>
-                <th>Provided Value</th>
-            </tr>
+          <tr>
+            <th>Input Reference</th>
+            <th>Provided Value</th>
+          </tr>
         </thead>
         <tbody>
-            {% for input, value in inputs.items() %}
-                <tr>
-                    <td>{{ input }}</td>
-                    <td>{{ value }}</td>
-                </tr>
-            {% endfor %}
+          {% for input, value in inputs.items() %}
+          <tr>
+            <td>{{ input }}</td>
+            <td>{{ value }}</td>
+          </tr>
+          {% endfor %}
         </tbody>
-    </table>
+      </table>
+    </div>
+  </div>
 
-    <h3>Outputs</h3>
-    <table class="table table-bordered">
+  <!-- Output Results Section -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h3 class="card-title mb-3">Outputs</h3>
+      <table class="table table-bordered table-striped">
         <thead>
-            <tr>
-                <th>Output Reference</th>
-                <th>Calculated Value</th>
-            </tr>
+          <tr>
+            <th>Output Reference</th>
+            <th>Calculated Value</th>
+          </tr>
         </thead>
         <tbody>
-            {% for output, result in results.items() %}
-                <tr>
-                    <td>{{ output }}</td>
-                    <td>{{ result }}</td>
-                </tr>
-            {% endfor %}
+          {% for output, result in results.items() %}
+          <tr>
+            <td>{{ output }}</td>
+            <td>{{ result }}</td>
+          </tr>
+          {% endfor %}
         </tbody>
-    </table>
+      </table>
+    </div>
+  </div>
 
-    <a href="{{ request.referrer }}" class="btn btn-secondary">Go Back</a>
+  <!-- Go Back Button -->
+  <a href="{{ request.referrer }}" class="btn btn-secondary">Go Back</a>
 
+</div>
 {% endblock %}
