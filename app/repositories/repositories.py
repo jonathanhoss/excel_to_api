@@ -1,4 +1,4 @@
-from app.models import ExcelFile, Calculation
+from app.models import ExcelFile, Calculation, User
 from werkzeug.utils import secure_filename
 import os
 from app import db
@@ -12,7 +12,12 @@ class ExcelFileRepository:
     def get_all(self):
         return ExcelFile.query.all()
 
-    def save(self, file):
+    def save(self, file, user_id):
+        # Ensure the user exists before proceeding (optional, but good practice)
+        user = User.query.get(user_id)
+        if not user:
+            raise ValueError("User not found")
+
         filename = secure_filename(file.filename)
         file_path = os.path.join(self.upload_folder, filename)
 
@@ -20,7 +25,7 @@ class ExcelFileRepository:
         file.save(file_path)
 
         # Save file metadata in the database
-        excel_file = ExcelFile(filename=filename, file_path=file_path)
+        excel_file = ExcelFile(filename=filename, file_path=file_path, user_id=user_id)
         db.session.add(excel_file)
         db.session.commit()
 
@@ -67,12 +72,18 @@ class CalculationRepository:
         return Calculation.query.get(calc_id)
 
     def create_calculation(
-        self, excel_file_id, calculation_name: str, inputs: list, outputs: list
+        self, user_id, excel_file_id, calculation_name: str, inputs: list, outputs: list
     ):
+        # Ensure the user exists (optional, but good practice)
+        user = User.query.get(user_id)
+        if not user:
+            raise ValueError("User not found")
+        
         # Create a new Calculation instance
         new_calculation = Calculation(
             excel_file_id=excel_file_id,
             name=calculation_name,
+            user_id=user_id  # Associate the calculation with the user
         )
 
         # Set the inputs and outputs lists

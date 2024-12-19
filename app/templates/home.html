@@ -17,6 +17,7 @@
           <tr>
             <th>#</th>
             <th>Filename</th>
+            <th>User</th>
             <th>Uploaded At</th>
             <th>Actions</th>
             <!-- Added an Actions column -->
@@ -27,6 +28,7 @@
           <tr>
             <td>{{ file.id }}</td>
             <td>{{ file.filename }}</td>
+            <td>{{ file.user.username }}</td>
             <td>{{ file.uploaded_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
             <td>
               <!-- Delete Button -->
@@ -63,6 +65,7 @@
             <!-- <th>Inputs</th>
             <th>Outputs</th>
             <th>Status</th> -->
+            <th>User</th>
             <th>Created At</th>
             <th>Actions</th> <!-- Added Actions column for the button -->
           </tr>
@@ -76,6 +79,7 @@
             <!-- <td>{{ calc.inputs_list }}</td>
             <td>{{ calc.outputs_list }}</td>
             <td>{{ calc.status }}</td> -->
+            <td>{{ calc.user.username }}</td>
             <td>{{ calc.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
             <td>
               <!-- Add a button that links to the form for the calculation -->

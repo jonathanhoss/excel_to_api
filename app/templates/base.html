@@ -22,6 +22,11 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('new_calculation') }}">New Calculation</a>
                 </li>
+                {% if 'user_id' in session %}  <!-- Check if the user is logged in -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>  <!-- Add logout link -->
+                </li>
+                {% endif %}
             </ul>
         </div>
     </nav>

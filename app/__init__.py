@@ -12,6 +12,7 @@ def create_app():
     app = Flask(__name__)
     # app.config.from_object("config.Config")  # Load the Config class from config.py
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///project.db"
+    app.config["SECRET_KEY"] = "adsfjklasdj"
     
     db.init_app(app)  # Initialize database
 

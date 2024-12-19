@@ -3,6 +3,7 @@
 from app import db
 import datetime
 import json
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class Calculation(db.Model):
@@ -27,6 +28,12 @@ class Calculation(db.Model):
 
     # Define the relationship to the ExcelFile
     excel_file = db.relationship("ExcelFile", back_populates="calculations")
+
+    # ForeignKey to link to the User model
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Define the relationship between User and Calculation
+    user = db.relationship('User', back_populates='calculations')
 
     def __repr__(self):
         return f"<Calculation {self.id} for Excel File {self.excel_file_id}>"
@@ -65,5 +72,31 @@ class ExcelFile(db.Model):
         "Calculation", back_populates="excel_file", cascade="all, delete-orphan"
     )
 
+    # ForeignKey to link to the User model
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Define the relationship between User and ExcelFile
+    user = db.relationship('User', back_populates='excel_files')
+
     def __repr__(self):
         return f"<ExcelFile {self.filename}>"
+
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    created_at = db.Column(
+        db.DateTime, default=datetime.datetime.now(datetime.timezone.utc)
+    )
+
+    # Relationships
+    excel_files = db.relationship("ExcelFile", backref="owner", lazy=True)
+    calculations = db.relationship("Calculation", backref="owner", lazy=True)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)

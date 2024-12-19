@@ -1,37 +1,113 @@
-from flask import render_template, request, redirect, url_for, jsonify
+from flask import render_template, request, redirect, url_for, jsonify, session
 from app.services.calculation_service import ExcelCalculationService
 from app.repositories.repositories import ExcelFileRepository, CalculationRepository
+from functools import wraps
+
+from app import db
+from app.models import User
 
 # Initialize the file repository (set your upload folder path)
 file_repo = ExcelFileRepository(upload_folder="uploads")
 calc_repo = CalculationRepository()
 excel_service = ExcelCalculationService()
 
+# Decorator to check if a user is logged in
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            # If the user is not logged in, redirect to the login page
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 def register_routes(app):
+    @app.route("/register", methods=["GET", "POST"])
+    def register():
+        if request.method == "POST":
+            data = request.form
+            username = data.get("username")
+            email = data.get("email")
+            password = data.get("password")
+
+            # Validate fields
+            if not username or not email or not password:
+                return jsonify({"error": "All fields are required"}), 400
+
+            # Check if user already exists
+            if (
+                User.query.filter_by(username=username).first()
+                or User.query.filter_by(email=email).first()
+            ):
+                return jsonify({"error": "Username or Email already taken"}), 400
+
+            # Create new user
+            new_user = User(username=username, email=email)
+            new_user.set_password(password)
+
+            # Save user to database
+            db.session.add(new_user)
+            db.session.commit()
+
+            return redirect(url_for("login"))
+            # return jsonify({"msg": "User registered successfully!"}), 201
+        return render_template("register.html")
+
+    @app.route("/login", methods=["GET", "POST"])
+    def login():
+        if request.method == "POST":
+            data = request.form
+            username = data.get("username")
+            password = data.get("password")
+
+            # Validate user credentials
+            user = User.query.filter_by(username=username).first()
+            if user and user.check_password(password):
+                # Store user ID in session
+                session["user_id"] = user.id
+                return redirect(url_for("home"))
+
+            return jsonify({"error": "Invalid credentials"}), 401
+
+        return render_template("login.html")
+
+    @app.route("/logout")
+    def logout():
+        session.pop("user_id", None)  # Removes user_id from the session
+        return redirect(url_for("login"))
+
     @app.route("/")
+    @login_required
     def home():
+        # Check if user is logged in
+        # if 'user_id' not in session:
+        #     return redirect(url_for('login'))  # Redirect to login page if not logged in
+
         # Fetch all Excel files and calculations from the database
         excel_files = file_repo.get_all()
         calculations = calc_repo.get_all()
         return render_template(
             "home.html", excel_files=excel_files, calculations=calculations
         )
-
     @app.route("/upload", methods=["POST"])
+    @login_required  # Protect this route
     def upload():
         if "file" not in request.files:
             return jsonify({"error": "No file provided"}), 400
         file = request.files["file"]
         if not file:
             return jsonify({"error": "No file provided"}), 400
-        file_repo.save(file)
+        
+        user_id = session["user_id"]
+        file_repo.save(file, user_id=user_id)
 
         return redirect(url_for("home"))
 
         # return {"msg": "File uploaded successfully"}
-
+    
     @app.route("/delete/<int:file_id>", methods=["POST"])
+    @login_required  # Protect this route
     def delete_file(file_id):
         # Delete the file from the database
         if file_repo.delete(file_id):
@@ -39,6 +115,7 @@ def register_routes(app):
         return jsonify({"error": "File not found"}), 404
 
     @app.route("/calculate/<filename>", methods=["GET"])
+    @login_required  # Protect this route
     def calculate_excel(filename):
         # Get the Excel file from the database using the filename
         excel_file = file_repo.get_file_by_name(filename)
@@ -75,6 +152,7 @@ def register_routes(app):
             )
 
     @app.route("/calculation/new", methods=["GET", "POST"])
+    @login_required  # Protect this route
     def new_calculation():
         if request.method == "GET":
             # Fetch all available Excel files for the dropdown
@@ -113,6 +191,7 @@ def register_routes(app):
 
                 # Create a new Calculation instance
                 new_calculation = calc_repo.create_calculation(
+                    user_id=session["user_id"],
                     excel_file_id=excel_file_id,
                     calculation_name=calculation_name,
                     inputs=inputs,
@@ -132,6 +211,7 @@ def register_routes(app):
                 )
 
     @app.route("/calculation/run/<int:calculation_id>", methods=["GET"])
+    @login_required  # Protect this route
     def get_calculation_form(calculation_id):
         # Fetch the calculation from the database
         db_calculation = calc_repo.get_calculation_by_id(calculation_id)
@@ -147,6 +227,7 @@ def register_routes(app):
         )
 
     @app.route("/calculation/run/<int:calculation_id>", methods=["POST"])
+    @login_required  # Protect this route
     def calculate_calculation(calculation_id):
         try:
             # Fetch the calculation from the database
