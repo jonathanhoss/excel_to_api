@@ -60,7 +60,9 @@ class ExcelFile(db.Model):
     )
 
     # Adding back_populates for the relationship with Calculations
-    calculations = db.relationship("Calculation", back_populates="excel_file")
+    calculations = db.relationship(
+        "Calculation", back_populates="excel_file", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<ExcelFile {self.filename}>"

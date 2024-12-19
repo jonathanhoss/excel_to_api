@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Calculation Results{% endblock %}
+
+{% block content %}
+
+<h1>Run Calculation: {{ calculation.id }}</h1>
+
+<form action="{{ url_for('calculate_calculation', calculation_id=calculation.id) }}" method="POST">
+    <h3>Inputs</h3>
+    {% for input in inputs %}
+        <div class="form-group">
+            <label for="{{ input }}">{{ input }}</label>
+            <input type="text" class="form-control" id="{{ input }}" name="{{ input }}" placeholder="Enter value for {{ input }}" required>
+        </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Run Calculation</button>
+</form>
+
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Calculation Results{% endblock %}
+
+{% block content %}
+
+
+      <h1 class="mb-4">Available Excel Files</h1>
+
+      <form method="POST" action="/upload" enctype="multipart/form-data">
+        <input type="file" name="file" />
+        <button type="submit">Upload</button>
+      </form>
+
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Filename</th>
+            <th>Uploaded At</th>
+            <th>Actions</th>
+            <!-- Added an Actions column -->
+          </tr>
+        </thead>
+        <tbody>
+          {% for file in excel_files %}
+          <tr>
+            <td>{{ file.id }}</td>
+            <td>{{ file.filename }}</td>
+            <td>{{ file.uploaded_at }}</td>
+            <td>
+              <!-- Delete Button -->
+              <form
+                action="{{ url_for('delete_file', file_id=file.id) }}"
+                method="POST"
+                style="display: inline"
+              >
+                <button class="btn btn-danger btn-sm" type="submit">
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h1 class="mt-5 mb-4">Available Calculations</h1>
+      <!-- Button to go to New Calculation page -->
+      <a
+        href="{{ url_for('new_calculation') }}"
+        class="btn btn-primary mb-4"
+      >
+        Create New Calculation
+      </a>
+
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Excel File</th>
+            <th>Inputs</th>
+            <th>Outputs</th>
+            <th>Status</th>
+            <th>Created At</th>
+            <th>Actions</th> <!-- Added Actions column for the button -->
+          </tr>
+        </thead>
+        <tbody>
+          {% for calc in calculations %}
+          <tr>
+            <td>{{ calc.id }}</td>
+            <td>{{ calc.excel_file.filename }}</td>
+            <td>{{ calc.inputs_list }}</td>
+            <td>{{ calc.outputs_list }}</td>
+            <td>{{ calc.status }}</td>
+            <td>{{ calc.created_at }}</td>
+            <td>
+              <!-- Add a button that links to the form for the calculation -->
+              <a href="{{ url_for('get_calculation_form', calculation_id=calc.id) }}" class="btn btn-primary">Run Calculation</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endblock %}
+

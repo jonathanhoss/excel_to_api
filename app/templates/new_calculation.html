@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Calculation Results{% endblock %}
+
+{% block content %}
+        <h1 class="mb-4">Create New Calculation</h1>
+        <form action="{{ url_for('new_calculation') }}" method="POST">
+            <div class="mb-3">
+                <label for="excel_file_id" class="form-label">Excel File</label>
+                <select class="form-select" id="excel_file_id" name="excel_file_id" required>
+                    <option value="">-- Select Excel File --</option>
+                    {% for file in excel_files %}
+                    <option value="{{ file.id }}">{{ file.filename }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="inputs" class="form-label">Inputs (Cells)</label>
+                <input type="text" class="form-control" id="inputs" name="inputs" placeholder="e.g., DATA!B1, DATA!B2" required>
+                <small class="form-text text-muted">Enter inputs separated by commas.</small>
+            </div>
+
+            <div class="mb-3">
+                <label for="outputs" class="form-label">Outputs (Cells)</label>
+                <input type="text" class="form-control" id="outputs" name="outputs" placeholder="e.g., DATA!C1, DATA!C2" required>
+                <small class="form-text text-muted">Enter outputs separated by commas.</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create Calculation</button>
+        </form>
+        {% endblock %}

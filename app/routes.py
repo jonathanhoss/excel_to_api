@@ -12,14 +12,13 @@ excel_service = ExcelCalculationService()
 def register_routes(app):
     @app.route("/")
     def home():
-        return render_template("base.html")
+        # Fetch all Excel files and calculations from the database
+        excel_files = ExcelFile.query.all()
+        calculations = Calculation.query.all()
 
-    @app.route("/debug")
-    def debug():
-        excel_service
 
-        mdl = excel_service.load_excel_model("test_a.xlsx").finish()
-        return {"msg": str(excel_service.model_calculate(mdl))}
+        return render_template("home.html", excel_files=excel_files, calculations=calculations)
+
 
     @app.route("/upload", methods=["POST"])
     def upload():
@@ -30,11 +29,21 @@ def register_routes(app):
             return jsonify({"error": "No file provided"}), 400
         file_repo.save(file)
 
-        return {"msg": "File uploaded successfully"}
+        return redirect(url_for("home"))
 
-    @app.route("/list-files", methods=["GET"])
-    def list_files():
-        return jsonify(str(file_repo.list_files()))
+        # return {"msg": "File uploaded successfully"}
+
+    @app.route("/delete/<int:file_id>", methods=["POST"])
+    def delete_file(file_id):
+        # Delete the file from the database
+        if file_repo.delete(file_id):
+            return redirect(url_for("home"))
+        return jsonify({"error": "File not found"}), 404
+
+    # TODO: #delete
+    # @app.route("/list-files", methods=["GET"])
+    # def list_files():
+    #     return jsonify(str(file_repo.list_files()))
 
     @app.route("/calculate/<filename>", methods=["GET"])
     def calculate_excel(filename):
@@ -72,51 +81,75 @@ def register_routes(app):
                 500,
             )
         
-    @app.route("/calculation/create", methods=["POST"])
-    def create_calculation():
-        try:
-            # Parse and validate the JSON request body
-            data = request.get_json()
-            if not data:
-                return jsonify({"error": "No input data provided"}), 400
+    @app.route("/calculation/new", methods=["GET", "POST"])
+    def new_calculation():
+        if request.method == "GET":
+            # Fetch all available Excel files for the dropdown
+            excel_files = ExcelFile.query.all()
+            return render_template("new_calculation.html", excel_files=excel_files)
 
-            # Extract fields
-            excel_file_id = data.get("excel_file_id")
-            inputs = data.get("inputs")
-            outputs = data.get("outputs")
+        if request.method == "POST":
+            try:
+                excel_file_id = request.form.get("excel_file_id")
+                inputs = request.form.get("inputs")  # Retrieve inputs as a list
+                outputs = request.form.get("outputs")  # Retrieve outputs as a list
 
-            if not excel_file_id:
-                return jsonify({"error": "Excel file ID is required"}), 400
+                # Split the inputs and outputs into lists
+                inputs = [cell.strip().upper() for cell in inputs.split(",")]
+                outputs = [cell.strip().upper() for cell in outputs.split(",")]
 
-            if not isinstance(outputs, list) or not outputs:
-                return jsonify({"error": "Valid outputs are required"}), 400
-            if not isinstance(inputs, list) or not inputs:
-                return jsonify({"error": "Valid inputs are required"}), 400
+                # # Extract fields
+                # excel_file_id = data.get("excel_file_id")
+                # inputs = data.get("inputs")
+                # outputs = data.get("outputs")
 
-            # Verify that the referenced Excel file exists
-            excel_file = ExcelFile.query.get(excel_file_id) # TODO: Put in repo
-            if not excel_file:
-                return jsonify({"error": f"Excel file with ID {excel_file_id} not found"}), 404
+                if not excel_file_id:
+                    return jsonify({"error": "Excel file ID is required"}), 400
 
-            # Create a new Calculation instance
-            new_calculation = Calculation(
-                excel_file_id=excel_file_id,
-            )
+                if not isinstance(outputs, list) or not outputs:
+                    return jsonify({"error": "Valid outputs are required"}), 400
+                if not isinstance(inputs, list) or not inputs:
+                    return jsonify({"error": "Valid inputs are required"}), 400
 
-            new_calculation.inputs_list = inputs
-            new_calculation.outputs_list = outputs
+                # Verify that the referenced Excel file exists
+                excel_file = ExcelFile.query.get(excel_file_id) # TODO: Put in repo
+                if not excel_file:
+                    return jsonify({"error": f"Excel file with ID {excel_file_id} not found"}), 404
 
-            # Save the calculation to the database
-            db.session.add(new_calculation)
-            db.session.commit()
+                # Create a new Calculation instance
+                new_calculation = Calculation(
+                    excel_file_id=excel_file_id,
+                )
 
-            return jsonify({
-                "msg": "Calculation created successfully",
-                "calculation_id": new_calculation.id
-            }), 201
+                new_calculation.inputs_list = inputs
+                new_calculation.outputs_list = outputs
 
-        except Exception as e:
-            return jsonify({"error": f"An error occurred while creating the calculation: {str(e)}"}), 500
+                # Save the calculation to the database
+                db.session.add(new_calculation)
+                db.session.commit()
+
+                return redirect(url_for("home"))
+                # return jsonify({
+                #     "msg": "Calculation created successfully",
+                #     "calculation_id": new_calculation.id
+                # }), 201
+
+            except Exception as e:
+                return jsonify({"error": f"An error occurred while creating the calculation: {str(e)}"}), 500
+
+
+    @app.route("/calculation/run/<int:calculation_id>", methods=["GET"])
+    def get_calculation_form(calculation_id):
+        # Fetch the calculation from the database
+        db_calculation = Calculation.query.get(calculation_id)
+        if not db_calculation:
+            return jsonify({"error": "Calculation not found"}), 404
+
+        # Extract the required inputs for the calculation
+        required_inputs = db_calculation.inputs_list  # e.g., ["DATA!B1", "DATA!B2"]
+
+        return render_template("calculation_form.html", calculation=db_calculation, inputs=required_inputs)
+
 
 
     @app.route("/calculation/run/<int:calculation_id>", methods=["POST"])
@@ -127,13 +160,17 @@ def register_routes(app):
             if not db_calculation:
                 return jsonify({"error": "Calculation not found"}), 404
 
-            # Parse the input values from the request body
-            data = request.get_json()
-            if not data or "inputs" not in data:
-                return jsonify({"error": "Inputs are required"}), 400
+            # Extract the inputs from the form (request.form)
+            user_inputs = request.form.to_dict()  # Convert form data to a dictionary
+
+            # Ensure all required inputs are provided
+            required_inputs = db_calculation.inputs_list  # e.g., ["DATA!B1", "DATA!B2"]
+            print("INPUT", user_inputs)
+            if not all(input in user_inputs for input in required_inputs):
+                return jsonify({"error": f"Missing required inputs: {required_inputs}"}), 400
 
             # Get the user-provided inputs
-            user_inputs = data["inputs"]
+            # user_inputs = data["inputs"]
 
             # Validate that the user provided all required inputs
             required_inputs = db_calculation.inputs_list  # e.g., ["DATA!B1", "DATA!B2"]
@@ -158,11 +195,19 @@ def register_routes(app):
 
             print(results)
 
-            # Return the results to the user
-            return jsonify({
-                "msg": f"Calculation {calculation_id} executed successfully",
-                "results": results
-            }), 200
+            # Render the result in an HTML template
+            return render_template(
+                "calculation_result.html",
+                calculation=db_calculation,
+                inputs=user_inputs,
+                results=results
+            ), 200
+
+            # # Return the results to the user
+            # return jsonify({
+            #     "msg": f"Calculation {calculation_id} executed successfully",
+            #     "results": results
+            # }), 200
 
         except Exception as e:
             return jsonify({"error": f"An error occurred: {str(e)}"}), 500

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Calculation Results{% endblock %}
+
+{% block content %}
+    <h1>Calculation Results for Calculation #{{ calculation.id }}</h1>
+
+    <h3>Excel File: {{ calculation.excel_file.filename }}</h3>
+    <h5>Status: {{ calculation.status }}</h5>
+
+    <h3>Input Values</h3>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Input Reference</th>
+                <th>Provided Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for input, value in inputs.items() %}
+                <tr>
+                    <td>{{ input }}</td>
+                    <td>{{ value }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>Outputs</h3>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Output Reference</th>
+                <th>Calculated Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for output, result in results.items() %}
+                <tr>
+                    <td>{{ output }}</td>
+                    <td>{{ result }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ request.referrer }}" class="btn btn-secondary">Go Back</a>
+
+{% endblock %}
