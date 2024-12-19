@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Calculations API{% endblock %}
+
+{% block content %}
+    <h1>Calculations API</h1>
+    <p>Here is a list of all available calculations with their respective API endpoints:</p>
+    
+    <div id="calculations-list" class="row">
+        {% for calculation in calculations %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ calculation.name }}</h5>
+                    <p><strong>ID:</strong> {{ calculation.id }}</p>
+                    <p><strong>Inputs:</strong> {{ calculation.inputs_list | tojson }}</p>
+                    <p><strong>Outputs:</strong> {{ calculation.outputs_list | tojson }}</p>
+                    
+                    <!-- Form for calculation inputs -->
+                    <form action="{{ url_for('api_calculate', calculation_id=calculation.id) }}" method="GET">
+                        <h6 class="mb-3">Enter Inputs</h6>
+                        
+                        {% for input_field in calculation.inputs_list %}
+                        <div class="form-group">
+                            <label for="{{ input_field }}">{{ input_field }}</label>
+                            <input type="text" id="{{ input_field }}" name="{{ input_field }}" class="form-control" placeholder="Enter value for {{ input_field }}">
+                        </div>
+                        {% endfor %}
+                        
+                        <button type="submit" class="btn btn-primary">Run Calculation</button>
+                    </form>
+                    
+                    <hr>
+                    
+                    <!-- Display curl command -->
+                    <h6>Example cURL Command:</h6>
+                    <pre>
+curl -X GET \
+  "{{ url_for('api_calculate', calculation_id=calculation.id, _external=True) }}" \
+  {% for input_field in calculation.inputs_list %}
+  -d "{{ input_field }}={{ request.args.get(input_field) }}" \
+  {% endfor %}
+</pre>
+                    
+                    <p>
+                        <a href="{{ url_for('api_calculate', calculation_id=calculation.id) }}" class="btn btn-secondary" target="_blank">
+                            Access API for this Calculation
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -105,7 +105,7 @@ class CalculationRepository:
             return calc
         return None
 
-    def delete_calculation(self, calc_id):
+    def delete(self, calc_id):
         calc = self.get_calculation_by_id(calc_id)
         if calc:
             db.session.delete(calc)

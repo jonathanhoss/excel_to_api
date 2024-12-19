@@ -297,6 +297,74 @@ def register_routes(app):
         except Exception as e:
             return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
+    @app.route("/calculation/delete/<int:calculation_id>", methods=["POST"])
+    @login_required
+    def delete_calculation(calculation_id):
+        # Fetch the calculation by ID
+        
+        calculation = calc_repo.delete(calculation_id)
+
+        return redirect(url_for('home'))  # Redirect to the home page after deletion
+
+
+
     @app.errorhandler(404)
     def not_found_error(error):
         return redirect(url_for("home"))
+    
+    @app.route("/api", methods=["GET"])
+    def api_home():
+        db_calcs = calc_repo.get_all()
+        return render_template('calculations_list.html', calculations=db_calcs)
+
+    @app.route("/calculation/api/<int:calculation_id>", methods=["GET"])
+    def api_calculate(calculation_id):
+        try:
+            # Fetch the calculation from the database
+            db_calculation = calc_repo.get_calculation_by_id(calculation_id)
+            if not db_calculation:
+                return jsonify({"error": "Calculation not found"}), 404
+
+            # Extract the inputs from the query parameters (or request body for POST requests)
+            user_inputs = request.args.to_dict()  # Use query parameters for GET requests
+
+            required_inputs = db_calculation.inputs_list  # e.g., ["DATA!B1", "DATA!B2"]
+            if not all(input in user_inputs for input in required_inputs):
+                return (
+                    jsonify({"error": f"Missing required inputs: {required_inputs}"}),
+                    400,
+                )
+
+            # Prepare inputs as a dictionary for the calculation logic
+            inputs_dict = {key: user_inputs[key] for key in required_inputs}
+
+            # Load the Excel model
+            excel_file = db_calculation.excel_file
+            xl_model = excel_service.load_excel_model(excel_file.file_path).finish()
+
+            # Run the calculation
+            outputs = db_calculation.outputs_list  # e.g., ["DATA!B3"]
+            inputs_dict = {
+                f"'[{excel_file.filename}]{key.split('!')[0]}'!{key.split('!')[1]}": inputs_dict[key]
+                for key in inputs_dict
+            }
+
+            solution = excel_service.model_calculate(xl_model, inputs=inputs_dict)
+            results = {
+                key: excel_service.get_cell_from_solution(
+                    solution, excel_file.filename, key.split("!")[0], key.split("!")[1]
+                )
+                for key in outputs
+            }
+
+            # Return the results as JSON
+            return jsonify({
+                "calculation_id": db_calculation.id,
+                "name": db_calculation.name,
+                "inputs": inputs_dict,
+                "results": results
+            })
+
+        except Exception as e:
+            return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+

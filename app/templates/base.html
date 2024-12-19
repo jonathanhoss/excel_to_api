@@ -15,12 +15,12 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
+            <ul class="navbar-nav ml-auto">  <!-- Added ml-auto class here to align items to the right -->
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('home') }}">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('new_calculation') }}">New Calculation</a>
+                    <a class="nav-link" href="{{ url_for('api_home') }}">API</a>
                 </li>
                 {% if 'user_id' in session %}  <!-- Check if the user is logged in -->
                 <li class="nav-item">
@@ -30,6 +30,7 @@
             </ul>
         </div>
     </nav>
+    
 
     <!-- Main Content -->
     <div class="container mt-4">
