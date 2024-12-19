@@ -19,7 +19,7 @@ class ExcelCalculationService:
 
     def model_calculate(
         self, xl_model: formulas.ExcelModel, inputs: dict = None, outputs: list = None
-    ) -> formulas.ExcelModel:
+    ):
         return xl_model.calculate(inputs=inputs, outputs=outputs)
 
 
