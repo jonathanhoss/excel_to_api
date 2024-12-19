@@ -10,6 +10,9 @@
     - **Upload Excel Files**: Users can upload Excel files to the system.
     - **File Storage**: Save the files in a directory or cloud storage and store metadata in a database.
 
+    -> Upload geht
+    -> List geht
+
 3. **Mapping Inputs/Outputs**:
     - Provide a UI to select cells in the Excel file and map them as **inputs** or **outputs**.
     - Save these mappings in the database.

@@ -19,7 +19,7 @@ def create_app():
     with app.app_context():
         print("Creating all tables...")
         # Ensure models are imported before calling create_all
-        from app.models import User, ExcelFile, Mapping  # Import your models here
+        from app.models import Calculation, ExcelFile  # Import your models here
         db.create_all()  # Create the database tables
 
         from app.routes import register_routes

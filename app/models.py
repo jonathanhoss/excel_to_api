@@ -2,15 +2,53 @@
 
 from app import db
 import datetime
+import json
 
 
-class User(db.Model):
+class Calculation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    excel_file_id = db.Column(
+        db.Integer, db.ForeignKey("excel_file.id"), nullable=False
+    )
+    inputs = db.Column(db.Text, nullable=True)  # Store as JSON strings
+    outputs = db.Column(db.Text, nullable=True)  # Store as JSON strings
+    status = db.Column(
+        db.String(50), default="Pending"
+    )  # Track the calculation status (Pending, In Progress, Completed)
+    created_at = db.Column(
+        db.DateTime, default=datetime.datetime.now(datetime.timezone.utc)
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.datetime.now(datetime.timezone.utc),
+        onupdate=datetime.datetime.now(datetime.timezone.utc),
+    )
+
+    # Define the relationship to the ExcelFile
+    excel_file = db.relationship("ExcelFile", back_populates="calculations")
 
     def __repr__(self):
-        return f"<User {self.username}>"
+        return f"<Calculation {self.id} for Excel File {self.excel_file_id}>"
+
+    @property
+    def inputs_list(self):
+        """Deserialize the inputs JSON string to a Python list."""
+        return json.loads(self.inputs) if self.inputs else []
+
+    @inputs_list.setter
+    def inputs_list(self, input_list):
+        """Serialize the inputs Python list to a JSON string."""
+        self.inputs = json.dumps(input_list)
+
+    @property
+    def outputs_list(self):
+        """Deserialize the outputs JSON string to a Python list."""
+        return json.loads(self.outputs) if self.outputs else []
+
+    @outputs_list.setter
+    def outputs_list(self, output_list):
+        """Serialize the outputs Python list to a JSON string."""
+        self.outputs = json.dumps(output_list)
 
 
 class ExcelFile(db.Model):
@@ -21,12 +59,8 @@ class ExcelFile(db.Model):
         db.DateTime, default=datetime.datetime.now(datetime.timezone.utc)
     )
 
+    # Adding back_populates for the relationship with Calculations
+    calculations = db.relationship("Calculation", back_populates="excel_file")
+
     def __repr__(self):
         return f"<ExcelFile {self.filename}>"
-
-
-class Mapping(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    file_id = db.Column(db.Integer, db.ForeignKey("excel_file.id"), nullable=False)
-    input_cell = db.Column(db.String(10), nullable=False)
-    output_cell = db.Column(db.String(10), nullable=False)

@@ -1,6 +1,7 @@
 # custom
 .venv/
 *.xlsx
+uploads/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

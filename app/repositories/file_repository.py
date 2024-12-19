@@ -34,3 +34,24 @@ class ExcelFileRepository:
             db.session.commit()
             return True
         return False
+    
+    def list_files(self):
+        # Query all files from the database
+        files = ExcelFile.query.all()
+
+        # Prepare the list of files as a list of dictionaries
+        file_list = []
+        for file in files:
+            file_info = {
+                'id': file.id,
+                'filename': file.filename,
+                'file_path': file.file_path,
+                'uploaded_at': file.uploaded_at
+            }
+            file_list.append(file_info)
+
+        return file_list
+    
+    def get_file_by_name(self, filename):
+        # Retrieve the file metadata by filename from the database
+        return ExcelFile.query.filter_by(filename=filename).first()
