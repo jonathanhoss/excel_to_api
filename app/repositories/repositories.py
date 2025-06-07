@@ -78,12 +78,12 @@ class CalculationRepository:
         user = User.query.get(user_id)
         if not user:
             raise ValueError("User not found")
-        
+
         # Create a new Calculation instance
         new_calculation = Calculation(
             excel_file_id=excel_file_id,
             name=calculation_name,
-            user_id=user_id  # Associate the calculation with the user
+            user_id=user_id,  # Associate the calculation with the user
         )
 
         # Set the inputs and outputs lists

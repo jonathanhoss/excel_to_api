@@ -41,20 +41,3 @@ class ExcelCalculationService:
         print(cell.value)
 
         return cell.value[0].item()
-
-
-if __name__ == "__main__":
-    # Create an instance of the ExcelCalculationService
-    service = ExcelCalculationService()
-
-    # Load the Excel file
-    file = "test_a.xlsx"
-
-    # get the current working directory
-    cwd = os.getcwd()
-    file_path = os.path.join(cwd, file)
-
-    print(file_path)
-
-    xl_model = service.load_excel_model(file_path).finish()
-    print(service.model_calculate(xl_model))

@@ -11,14 +11,16 @@ file_repo = ExcelFileRepository(upload_folder="uploads")
 calc_repo = CalculationRepository()
 excel_service = ExcelCalculationService()
 
+
 # Decorator to check if a user is logged in
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
+        if "user_id" not in session:
             # If the user is not logged in, redirect to the login page
-            return redirect(url_for('login'))
+            return redirect(url_for("login"))
         return f(*args, **kwargs)
+
     return decorated_function
 
 
@@ -90,6 +92,7 @@ def register_routes(app):
         return render_template(
             "home.html", excel_files=excel_files, calculations=calculations
         )
+
     @app.route("/upload", methods=["POST"])
     @login_required  # Protect this route
     def upload():
@@ -98,14 +101,14 @@ def register_routes(app):
         file = request.files["file"]
         if not file:
             return jsonify({"error": "No file provided"}), 400
-        
+
         user_id = session["user_id"]
         file_repo.save(file, user_id=user_id)
 
         return redirect(url_for("home"))
 
         # return {"msg": "File uploaded successfully"}
-    
+
     @app.route("/delete/<int:file_id>", methods=["POST"])
     @login_required  # Protect this route
     def delete_file(file_id):
@@ -301,21 +304,19 @@ def register_routes(app):
     @login_required
     def delete_calculation(calculation_id):
         # Fetch the calculation by ID
-        
+
         calculation = calc_repo.delete(calculation_id)
 
-        return redirect(url_for('home'))  # Redirect to the home page after deletion
-
-
+        return redirect(url_for("home"))  # Redirect to the home page after deletion
 
     @app.errorhandler(404)
     def not_found_error(error):
         return redirect(url_for("home"))
-    
+
     @app.route("/api", methods=["GET"])
     def api_home():
         db_calcs = calc_repo.get_all()
-        return render_template('calculations_list.html', calculations=db_calcs)
+        return render_template("calculations_list.html", calculations=db_calcs)
 
     @app.route("/calculation/api/<int:calculation_id>", methods=["GET"])
     def api_calculate(calculation_id):
@@ -326,7 +327,9 @@ def register_routes(app):
                 return jsonify({"error": "Calculation not found"}), 404
 
             # Extract the inputs from the query parameters (or request body for POST requests)
-            user_inputs = request.args.to_dict()  # Use query parameters for GET requests
+            user_inputs = (
+                request.args.to_dict()
+            )  # Use query parameters for GET requests
 
             required_inputs = db_calculation.inputs_list  # e.g., ["DATA!B1", "DATA!B2"]
             if not all(input in user_inputs for input in required_inputs):
@@ -345,7 +348,9 @@ def register_routes(app):
             # Run the calculation
             outputs = db_calculation.outputs_list  # e.g., ["DATA!B3"]
             inputs_dict = {
-                f"'[{excel_file.filename}]{key.split('!')[0]}'!{key.split('!')[1]}": inputs_dict[key]
+                f"'[{excel_file.filename}]{key.split('!')[0]}'!{key.split('!')[1]}": inputs_dict[
+                    key
+                ]
                 for key in inputs_dict
             }
 
@@ -358,13 +363,14 @@ def register_routes(app):
             }
 
             # Return the results as JSON
-            return jsonify({
-                "calculation_id": db_calculation.id,
-                "name": db_calculation.name,
-                "inputs": inputs_dict,
-                "results": results
-            })
+            return jsonify(
+                {
+                    "calculation_id": db_calculation.id,
+                    "name": db_calculation.name,
+                    "inputs": inputs_dict,
+                    "results": results,
+                }
+            )
 
         except Exception as e:
             return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-

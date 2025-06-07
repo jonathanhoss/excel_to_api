@@ -1,3 +1,5 @@
-Flask
-Flask-SQLAlchemy
-formulas[all]
+Flask==3.1.0
+Flask-SQLAlchemy==3.1.1
+formulas[all]==1.2.8
+gunicorn==23.0.0
+python-dotenv==1.1.0
